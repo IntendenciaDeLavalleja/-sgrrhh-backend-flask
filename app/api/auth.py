@@ -1,144 +1,120 @@
+from datetime import datetime, timedelta
+
 from flask import jsonify, request, current_app
+from flask_jwt_extended import (
+    create_access_token,
+    jwt_required,
+    get_jwt_identity,
+    get_jwt,
+)
+import secrets
+
 from app.models.user import AdminUser, TwoFactorCode
 from app.services.email_service import send_2fa_email
 from app.extensions import db, limiter
 from app.utils.logging_helper import log_activity
-from flask_jwt_extended import create_access_token
-import secrets
-import hmac
-import hashlib
-import time
-from datetime import datetime, timedelta
 from . import api_bp
-
-# ---------------------------------------------------------------------------
-# HMAC token para el paso 2FA — stateless, sin sesión Flask.
-# Formato: "{user_id}:{timestamp}:{hmac_sha256}"
-# ---------------------------------------------------------------------------
-
-def _hmac_sign(payload: str) -> str:
-    secret = current_app.config['SECRET_KEY'].encode('utf-8')
-    sig = hmac.new(secret, payload.encode('utf-8'), hashlib.sha256).hexdigest()
-    return f"{payload}:{sig}"
-
-
-def _hmac_verify(token: str, max_age: int) -> "str | None":
-    """Verifica firma y expiración. Devuelve el payload o None si inválido."""
-    try:
-        *parts, received_sig = token.split(':')
-        payload = ':'.join(parts)
-        secret = current_app.config['SECRET_KEY'].encode('utf-8')
-        expected_sig = hmac.new(secret, payload.encode('utf-8'), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(received_sig, expected_sig):
-            return None
-        timestamp = int(parts[-1])
-        if int(time.time()) - timestamp > max_age:
-            return None
-        return payload
-    except (ValueError, TypeError, IndexError):
-        return None
 
 
 @api_bp.route('/auth/login', methods=['POST'])
 @limiter.limit("10 per minute")
 def api_login():
     """Login paso 1: valida credenciales y envía código 2FA."""
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No se proporcionaron datos JSON"}), 400
-
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
+    body = request.get_json(silent=True) or {}
+    email = (body.get("email") or "").strip().lower()
+    password = body.get("password") or ""
 
     if not email or not password:
         return jsonify({"error": "Correo electrónico y contraseña requeridos"}), 400
 
-    user = AdminUser.query.filter_by(email=email).first()
+    user = AdminUser.query.filter_by(email=email, is_active=True).first()
+    if not user or not user.check_password(password):
+        log_activity("API_LOGIN_FAIL", f"Intento de login fallido: {email}")
+        return jsonify({"error": "Correo electrónico o contraseña inválidos"}), 401
 
-    if user and user.check_password(password):
-        pending_token = _hmac_sign(f"{user.id}:{int(time.time())}")
+    # Invalidar códigos anteriores sin usar
+    TwoFactorCode.query.filter_by(user_id=user.id).filter(
+        TwoFactorCode.consumed_at.is_(None)
+    ).delete(synchronize_session=False)
 
-        code = ''.join([secrets.choice('0123456789') for _ in range(6)])
+    code = ''.join([secrets.choice('0123456789') for _ in range(6)])
+    tf_code = TwoFactorCode(user_id=user.id, code=code)
+    db.session.add(tf_code)
+    db.session.commit()
 
-        tf_code = TwoFactorCode(user_id=user.id, code=code)
-        db.session.add(tf_code)
-        db.session.commit()
-
+    try:
         send_2fa_email(user.email, code)
+    except Exception as exc:
+        current_app.logger.error(f"2FA email failed for {email}: {exc}")
 
-        log_activity("API_LOGIN_STEP1_SUCCESS", f"Credenciales válidas. 2FA enviado a {user.email}", user)
-        return jsonify({
-            "success": True,
-            "message": "Código 2FA enviado al correo institucional",
-            "email_preview": f"{user.email[:3]}...{user.email[-4:]}",
-            "pending_token": pending_token,
-        }), 200
+    # Token pendiente de 2FA — tipo especial, expira en 10 minutos
+    pending_token = create_access_token(
+        identity=str(user.id),
+        additional_claims={"type": "2fa_pending"},
+        expires_delta=timedelta(minutes=10),
+    )
 
-    log_activity("API_LOGIN_FAIL", f"Intento de login fallido: {email}")
-    return jsonify({"success": False, "error": "Correo electrónico o contraseña inválidos"}), 401
+    log_activity("API_LOGIN_STEP1_SUCCESS", f"Credenciales válidas. 2FA enviado a {user.email}", user)
+
+    return jsonify({
+        "requires_2fa": True,
+        "pending_token": pending_token,
+        "email_preview": f"{user.email[:3]}...{user.email[-4:]}",
+    }), 200
 
 
 @api_bp.route('/auth/verify-2fa', methods=['POST'])
 @limiter.limit("10 per minute")
+@jwt_required()
 def api_verify_2fa():
-    """Login paso 2: verifica el código 2FA y devuelve JWT válido por 24h."""
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No se proporcionaron datos JSON"}), 400
+    """Login paso 2: verifica el código 2FA y devuelve JWT de acceso válido por 24h."""
+    claims = get_jwt()
+    if claims.get("type") != "2fa_pending":
+        return jsonify({"error": "Token inválido para este endpoint."}), 403
 
-    code = data.get('code', '').strip()
-    pending_token = data.get('pending_token', '')
+    user_id = int(get_jwt_identity())
+
+    body = request.get_json(silent=True) or {}
+    code = (body.get("code") or "").strip()
 
     if not code:
         return jsonify({"error": "Código de verificación requerido"}), 400
 
-    # Verificar token pendiente de 2FA (expira en 10 minutos)
-    payload = _hmac_verify(pending_token, max_age=600)
-    if payload is None:
-        return jsonify({"error": "Sesión expirada o inválida"}), 401
+    tf_code = TwoFactorCode.query.filter_by(user_id=user_id).filter(
+        TwoFactorCode.consumed_at.is_(None)
+    ).order_by(TwoFactorCode.id.desc()).first()
 
-    try:
-        user_id_str, _ts = payload.split(':')
-        user_id = int(user_id_str)
-    except (ValueError, TypeError):
-        return jsonify({"error": "Token inválido"}), 401
+    if not tf_code or not tf_code.verify_code(code):
+        log_activity("API_LOGIN_2FA_FAIL", f"Código 2FA incorrecto para usuario ID: {user_id}")
+        return jsonify({"error": "Código inválido o expirado"}), 401
+
+    tf_code.consumed_at = datetime.utcnow()
 
     user = AdminUser.query.get(user_id)
 
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
+    access_token = create_access_token(
+        identity=str(user.id),
+        additional_claims={
+            "type": "access",
+            "email": user.email,
+            "username": user.username,
+            "is_superuser": user.is_superuser,
+        },
+        expires_delta=timedelta(hours=24),
+    )
 
-    tf_code = TwoFactorCode.query.filter_by(user_id=user.id, consumed_at=None)\
-        .order_by(TwoFactorCode.created_at.desc()).first()
+    db.session.commit()
 
-    if tf_code and tf_code.verify_code(code):
-        tf_code.consumed_at = datetime.utcnow()
-        db.session.commit()
+    log_activity("API_LOGIN_2FA_SUCCESS", "Sesión JWT iniciada (24h).", user)
 
-        # JWT válido por 24 horas
-        access_token = create_access_token(
-            identity=str(user.id),
-            additional_claims={
-                "email": user.email,
-                "username": user.username,
-                "is_superuser": user.is_superuser,
-            },
-            expires_delta=timedelta(hours=24)
-        )
-
-        log_activity("API_LOGIN_2FA_SUCCESS", "Sesión JWT iniciada (24h).", user)
-
-        return jsonify({
-            "success": True,
-            "message": "Sesión iniciada correctamente",
-            "access_token": access_token,
-            "expires_in": 86400,
-            "user": {
-                "username": user.username,
-                "email": user.email,
-                "is_superuser": user.is_superuser
-            }
-        }), 200
-
-    log_activity("API_LOGIN_2FA_FAIL", f"Código 2FA incorrecto para usuario ID: {user_id}", user)
-    return jsonify({"success": False, "error": "Código inválido o expirado"}), 400
+    return jsonify({
+        "success": True,
+        "message": "Sesión iniciada correctamente",
+        "access_token": access_token,
+        "expires_in": 86400,
+        "user": {
+            "username": user.username,
+            "email": user.email,
+            "is_superuser": user.is_superuser,
+        },
+    }), 200

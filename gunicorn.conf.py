@@ -20,7 +20,7 @@ worker_class = "gthread"
 threads = _int_env("GUNICORN_THREADS", 4)
 
 # Evita que workers colgados vivan indefinidamente.
-timeout = _int_env("GUNICORN_TIMEOUT", 60)
+timeout = _int_env("GUNICORN_TIMEOUT", 120)
 graceful_timeout = _int_env("GUNICORN_GRACEFUL_TIMEOUT", 30)
 keepalive = _int_env("GUNICORN_KEEPALIVE", 5)
 
