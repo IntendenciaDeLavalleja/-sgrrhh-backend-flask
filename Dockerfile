@@ -32,8 +32,8 @@ RUN chmod +x /app/entrypoint.sh
 # Expose port
 EXPOSE 5000
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+# Healthcheck — start-period must cover: DB wait (up to 60s) + migrations
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
   CMD curl -f http://localhost:5000/health || exit 1
 
 # Run entrypoint

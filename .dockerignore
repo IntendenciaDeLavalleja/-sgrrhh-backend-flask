@@ -42,6 +42,3 @@ Instructions.txt
 
 # Public static (served by nginx frontend, not Flask)
 public/
-
-# Migration files — the container generates fresh migrations from models at startup
-migrations/
