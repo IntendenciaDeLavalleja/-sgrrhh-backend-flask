@@ -4,7 +4,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_ENV=production
-ENV FLASK_APP=app.py
+ENV FLASK_APP=wsgi.py
 ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc_dir
 
 # Set work directory
@@ -32,8 +32,8 @@ RUN chmod +x /app/entrypoint.sh
 # Expose port
 EXPOSE 5000
 
-# Healthcheck — start-period must cover: DB wait (up to 60s) + migrations
-HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+# Healthcheck — start-period covers DB wait (up to 60s) + gunicorn boot
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:5000/health || exit 1
 
 # Run entrypoint

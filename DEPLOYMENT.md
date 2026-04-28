@@ -25,22 +25,6 @@ git commit -m "feat: <descripcion>"
 
 ---
 
-## Flujo de producción (Coolify)
-
-1. El developer commitea las migraciones junto al código.
-2. Coolify hace build de la imagen Docker.
-3. `COPY . .` en el Dockerfile copia `migrations/` dentro de la imagen.
-4. El entrypoint ejecuta `flask db upgrade` — aplica solo las migraciones pendientes.
-
-**Variables de entorno relevantes:**
-
-| Variable | Default | Descripción |
-|---|---|---|
-| `RUN_MIGRATIONS` | `true` | `false` para saltar migraciones en este deploy |
-| `DATABASE_URL` | — | URI de conexión MariaDB (`mariadb+mariadbconnector://...`) |
-
----
-
 ## Qué se commitea
 
 ```
