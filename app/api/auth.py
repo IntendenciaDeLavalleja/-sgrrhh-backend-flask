@@ -5,7 +5,6 @@ from app.extensions import db, limiter
 from app.utils.logging_helper import log_activity
 from flask_jwt_extended import create_access_token
 import secrets
-import random
 import hmac
 import hashlib
 import time
@@ -13,8 +12,8 @@ from datetime import datetime, timedelta
 from . import api_bp
 
 # ---------------------------------------------------------------------------
-# Helpers de tokens HMAC — stateless, sin dependencia de sesión Flask.
-# Formato: "{payload}:{hexdigest}"
+# HMAC token para el paso 2FA — stateless, sin sesión Flask.
+# Formato: "{user_id}:{timestamp}:{hmac_sha256}"
 # ---------------------------------------------------------------------------
 
 def _hmac_sign(payload: str) -> str:
@@ -32,7 +31,6 @@ def _hmac_verify(token: str, max_age: int) -> "str | None":
         expected_sig = hmac.new(secret, payload.encode('utf-8'), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(received_sig, expected_sig):
             return None
-        # El último campo del payload es siempre el timestamp
         timestamp = int(parts[-1])
         if int(time.time()) - timestamp > max_age:
             return None
@@ -41,72 +39,23 @@ def _hmac_verify(token: str, max_age: int) -> "str | None":
         return None
 
 
-def _generate_captcha():
-    """Genera captcha numérico con token HMAC firmado (no usa sesión Flask)."""
-    num1 = random.randint(1, 15)
-    num2 = random.randint(1, 15)
-    answer = num1 + num2
-    # payload: "{answer}:{timestamp}"
-    token = _hmac_sign(f"{answer}:{int(time.time())}")
-    question = f"¿Cuánto es {num1} + {num2}?"
-    return question, token
-
-
-def _verify_captcha_token(token: str, user_answer) -> bool:
-    """Valida token de captcha. Expira a los 5 minutos."""
-    payload = _hmac_verify(token, max_age=300)
-    if payload is None:
-        return False
-    try:
-        answer_str, _ts = payload.split(':')
-        return int(answer_str) == int(user_answer)
-    except (ValueError, TypeError):
-        return False
-
-
-@api_bp.route('/auth/captcha', methods=['GET'])
-@limiter.limit("30 per minute")
-def api_captcha():
-    """Genera y devuelve la pregunta del captcha con token firmado."""
-    question, token = _generate_captcha()
-    return jsonify({"question": question, "token": token}), 200
-
-
 @api_bp.route('/auth/login', methods=['POST'])
 @limiter.limit("10 per minute")
 def api_login():
-    """Login paso 1: valida credenciales + captcha y envía código 2FA."""
+    """Login paso 1: valida credenciales y envía código 2FA."""
     data = request.get_json()
     if not data:
         return jsonify({"error": "No se proporcionaron datos JSON"}), 400
 
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
-    captcha_answer = data.get('captcha_answer')
-    captcha_token = data.get('captcha_token', '')
 
     if not email or not password:
         return jsonify({"error": "Correo electrónico y contraseña requeridos"}), 400
 
-    # Validar captcha con token HMAC (sin sesión)
-    if not captcha_token or captcha_answer is None:
-        log_activity("API_LOGIN_CAPTCHA_FAIL", f"Captcha ausente para: {email}")
-        return jsonify({"error": "Debe completar el captcha"}), 400
-
-    try:
-        captcha_answer_int = int(captcha_answer)
-    except (ValueError, TypeError):
-        log_activity("API_LOGIN_CAPTCHA_FAIL", f"Captcha inválido para: {email}")
-        return jsonify({"error": "Respuesta de captcha inválida"}), 400
-
-    if not _verify_captcha_token(captcha_token, captcha_answer_int):
-        log_activity("API_LOGIN_CAPTCHA_FAIL", f"Captcha incorrecto para: {email}")
-        return jsonify({"error": "Captcha incorrecto"}), 400
-
     user = AdminUser.query.filter_by(email=email).first()
 
     if user and user.check_password(password):
-        # Token de 2FA pendiente — firmado, expira en 10 minutos (sin sesión)
         pending_token = _hmac_sign(f"{user.id}:{int(time.time())}")
 
         code = ''.join([secrets.choice('0123456789') for _ in range(6)])
