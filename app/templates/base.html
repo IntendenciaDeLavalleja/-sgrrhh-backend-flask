@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel de Administración{% endblock %} - RRHH Manager IDL</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Flowbite -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    
+    <!-- Configuración de Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa',
+                            500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .admin-main-shell {
+            padding: 0.75rem;
+        }
+
+        .admin-main-inner {
+            margin-top: 3.5rem;
+            padding: 0.5rem;
+        }
+
+        @media (min-width: 640px) {
+            .admin-main-shell {
+                margin-left: 16rem;
+                padding: 1rem;
+            }
+
+            .admin-main-inner {
+                margin-top: 3.75rem;
+                padding: 0.75rem;
+            }
+        }
+
+        .admin-page-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .admin-inline-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .admin-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .admin-table {
+            width: 100%;
+            min-width: 760px;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            vertical-align: top;
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        .admin-nowrap {
+            white-space: nowrap;
+        }
+
+        .admin-truncate {
+            max-width: 16rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+            .btn {
+                white-space: normal;
+                line-height: 1.2;
+                min-height: 2.25rem;
+            }
+
+            .admin-truncate {
+                max-width: 11rem;
+            }
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            border-radius: 0.75rem;
+            border: 1px solid transparent;
+            padding: 0.5rem 0.875rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+            line-height: 1;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn:hover { filter: brightness(0.96); }
+        .btn:focus { outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+
+        .btn-sm { padding: 0.4rem 0.75rem; font-size: 0.75rem; border-radius: 0.625rem; }
+        .btn-xs { padding: 0.3rem 0.6rem; font-size: 0.7rem; border-radius: 0.55rem; }
+        .btn-block { width: 100%; }
+
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #1d4ed8; }
+
+        .btn-success { background: #059669; color: #fff; }
+        .btn-success:hover { background: #047857; }
+
+        .btn-error { background: #dc2626; color: #fff; }
+        .btn-error:hover { background: #b91c1c; }
+
+        .btn-info { background: #2563eb; color: #fff; }
+        .btn-info:hover { background: #1d4ed8; }
+
+        .btn-ghost {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #e2e8f0;
+        }
+
+        .btn-ghost:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .btn-outline { background: #fff; }
+        .btn-outline.btn-error { color: #dc2626; border-color: #fecaca; }
+        .btn-outline.btn-error:hover { background: #fef2f2; color: #b91c1c; }
+        .btn-outline.btn-info { color: #2563eb; border-color: #bfdbfe; }
+        .btn-outline.btn-info:hover { background: #eff6ff; color: #1d4ed8; }
+
+        .btn-circle {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased">
+
+    <!-- Navbar Superior -->
+    <nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="px-3 py-3 lg:px-5 lg:pl-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center justify-start">
+                    <button data-drawer-target="logo-sidebar" data-drawer-toggle="logo-sidebar" aria-controls="logo-sidebar" type="button" class="inline-flex items-center p-2 text-sm text-slate-500 rounded-lg sm:hidden hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-200">
+                        <span class="sr-only">Abrir menú lateral</span>
+                        <svg class="w-6 h-6" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                           <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path>
+                        </svg>
+                    </button>
+                    <a href="{{ url_for('admin.dashboard') }}" class="flex ms-2 md:me-24 min-w-0">
+                        <span class="self-center text-sm font-bold sm:text-xl md:text-2xl truncate max-w-[48vw] sm:max-w-none bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">RRHH Manager — Intendencia de Lavalleja</span>
+                    </a>
+                </div>
+                <div class="flex items-center">
+                    <div class="flex items-center ms-3">
+                        <div>
+                            <button type="button" class="flex text-sm bg-slate-800 rounded-full focus:ring-4 focus:ring-slate-300" aria-expanded="false" data-dropdown-toggle="dropdown-user">
+                                <span class="sr-only">Abrir menú de usuario</span>
+                                <div class="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-700 font-bold">
+                                    {{ current_user.username[0].upper() if current_user.is_authenticated else 'A' }}
+                                </div>
+                            </button>
+                        </div>
+                        <div class="z-50 hidden my-4 text-base list-none bg-white divide-y divide-slate-100 rounded shadow" id="dropdown-user">
+                            <div class="px-4 py-3" role="none">
+                                <p class="text-sm text-slate-900" role="none">
+                                    {{ current_user.username if current_user.is_authenticated else 'Invitado' }}
+                                </p>
+                                <p class="text-sm font-medium text-slate-900 truncate" role="none">
+                                    {{ current_user.email if current_user.is_authenticated else '' }}
+                                </p>
+                            </div>
+                            <ul class="py-1" role="none">
+                                <li>
+                                    <a href="{{ url_for('admin.logout') }}" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100" role="menuitem">Cerrar Sesión</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar Lateral -->
+    <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-white border-r border-slate-200 sm:translate-x-0" aria-label="Sidebar">
+        <div class="h-full px-3 pb-4 overflow-y-auto bg-white">
+            <ul class="space-y-2 font-medium">
+                <li>
+                    <a href="{{ url_for('admin.dashboard') }}" class="flex items-center p-2 text-slate-900 rounded-xl hover:bg-slate-100 group">
+                        <svg class="w-5 h-5 text-slate-500 transition duration-75 group-hover:text-slate-900" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path></svg>
+                        <span class="ms-3">Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- FUNCIONARIOS -->
+                <li class="pt-3 mt-3 border-t border-slate-100">
+                    <p class="px-2 pb-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Funcionarios</p>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.funcionarios_list') }}" class="flex items-center p-2 text-slate-900 rounded-xl hover:bg-blue-50 hover:text-blue-700 group">
+                        <svg class="w-5 h-5 text-slate-500 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span class="ms-3">Planilla de Personal</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.funcionarios_nuevo') }}" class="flex items-center p-2 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 group">
+                        <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        <span class="ms-3 text-sm">Nuevo Funcionario</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.hr_cargos') }}" class="flex items-center p-2 text-slate-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 group">
+                        <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <span class="ms-3 text-sm">Cargos</span>
+                    </a>
+                </li>
+
+                <!-- FUNCIONARIOS ZAFRALES -->
+                <li class="pt-3 mt-3 border-t border-slate-100">
+                    <p class="px-2 pb-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Funcionarios Zafrales</p>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.zafrales_list') }}" class="flex items-center p-2 text-slate-900 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 group">
+                        <svg class="w-5 h-5 text-slate-500 group-hover:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <span class="ms-3">Planilla Zafral</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.zafrales_nuevo') }}" class="flex items-center p-2 text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 group">
+                        <svg class="w-5 h-5 text-slate-400 group-hover:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                        <span class="ms-3 text-sm">Nuevo Zafral</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.hr_tareas') }}" class="flex items-center p-2 text-slate-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 group">
+                        <svg class="w-5 h-5 text-slate-400 group-hover:text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <span class="ms-3 text-sm">Tareas</span>
+                    </a>
+                </li>
+
+                <!-- ÁREAS -->
+                <li class="pt-3 mt-3 border-t border-slate-100">
+                    <p class="px-2 pb-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Áreas</p>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.hr_areas') }}" class="flex items-center p-2 text-slate-900 rounded-xl hover:bg-violet-50 hover:text-violet-700 group">
+                        <svg class="w-5 h-5 text-slate-500 group-hover:text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        <span class="ms-3">Áreas Dependencias</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.hr_opciones') }}" class="flex items-center p-2 text-slate-900 rounded-xl hover:bg-violet-50 hover:text-violet-700 group">
+                        <svg class="w-5 h-5 text-slate-500 group-hover:text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                        <span class="ms-3">Catálogos RRHH</span>
+                    </a>
+                </li>
+
+                {% if current_user.is_authenticated and current_user.is_superuser %}
+                <li class="pt-3 mt-3 border-t border-slate-100">
+                    <p class="px-2 pb-1 text-xs font-bold text-slate-400 uppercase tracking-wider">Administración</p>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.audit_logs') }}" class="flex items-center p-2 text-red-600 rounded-xl hover:bg-red-50 group font-semibold">
+                        <svg class="shrink-0 w-5 h-5 text-red-500 transition duration-75 group-hover:text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <span class="ms-3">Auditoría</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('admin.usuarios_list') }}" class="flex items-center p-2 text-indigo-600 rounded-xl hover:bg-indigo-50 group font-semibold">
+                        <svg class="shrink-0 w-5 h-5 text-indigo-500 transition duration-75 group-hover:text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                        <span class="ms-3">Usuarios del Panel</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <div class="admin-main-shell">
+        <div class="admin-main-inner">
+            
+            <!-- Mensajes Flash -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-6 space-y-2">
+                        {% for category, message in messages %}
+                            <div class="flex items-center justify-between p-4 mb-4 text-sm rounded-2xl {% if category == 'success' %}text-emerald-800 bg-emerald-50 border border-emerald-100{% elif category == 'error' %}text-rose-800 bg-rose-50 border border-rose-100{% else %}text-blue-800 bg-blue-50 border border-blue-100{% endif %}" role="alert">
+                                <span>{{ message }}</span>
+                                <button type="button" onclick="this.parentElement.remove()" class="ml-4 shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full opacity-60 hover:opacity-100 transition-opacity focus:outline-none" aria-label="Cerrar">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Flowbite JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

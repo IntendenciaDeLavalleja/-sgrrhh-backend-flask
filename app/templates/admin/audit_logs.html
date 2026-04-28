@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}Auditoría Forense{% endblock %}
+
+{% block content %}
+<div class="admin-page-header mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-red-800 flex items-center">
+            <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            Registro de Auditoría (Forense)
+        </h1>
+        <p class="text-sm text-slate-500 italic">Historial completo de actividades, accesos y modificaciones para seguridad del sistema.</p>
+    </div>
+</div>
+
+<!-- Filtros Avanzados -->
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+    <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div>
+            <label class="block mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Acción</label>
+            <select name="action" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                <option value="">Todas las acciones</option>
+                {% for action in actions %}
+                <option value="{{ action }}" {% if action == current_action %}selected{% endif %}>{{ action }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Usuario</label>
+            <select name="username" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+                <option value="">Todos los usuarios</option>
+                {% for user in users %}
+                <option value="{{ user }}" {% if user == current_username %}selected{% endif %}>{{ user }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">Fecha</label>
+            <input type="date" name="date" value="{{ current_date or '' }}" class="bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-red-500 focus:border-red-500 block w-full p-2.5">
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="btn btn-error flex-1">Consultar</button>
+            <button type="button" onclick="exportData()" class="btn btn-success" title="Exportar CSV">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                CSV
+            </button>
+            <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-ghost">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+function exportData() {
+    const action = document.querySelector('select[name="action"]').value;
+    const username = document.querySelector('select[name="username"]').value;
+    const date = document.querySelector('input[name="date"]').value;
+    
+    let url = "{{ url_for('admin.export_audit_logs') }}?";
+    if (action) url += `action=${action}&`;
+    if (username) url += `username=${username}&`;
+    if (date) url += `date=${date}&`;
+    
+    window.location.href = url;
+}
+</script>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden admin-table-wrap">
+    <table class="admin-table w-full text-left">
+        <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Timestamp</th>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Usuario</th>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center">Acción / Tipo</th>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">IP & Origen</th>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Detalles</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+            {% for log in logs %}
+            <tr class="hover:bg-slate-50/80 transition-colors {% if 'FAIL' in log.action or 'UNAUTHORIZED' in log.action %}bg-red-50/30{% endif %}">
+                <td class="px-6 py-4 text-xs font-mono text-slate-500">
+                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                </td>
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <div class="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs mr-3">
+                            {{ log.username[0] | upper if log.username else '?' }}
+                        </div>
+                        <span class="text-sm font-semibold text-slate-700">{{ log.username or 'Anónimo' }}</span>
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    {% set badge_class = 'bg-blue-100 text-blue-700' %}
+                    {% if 'FAIL' in log.action or 'UNAUTHORIZED' in log.action %}
+                        {% set badge_class = 'bg-red-100 text-red-700' %}
+                    {% elif 'SUCCESS' in log.action %}
+                        {% set badge_class = 'bg-green-100 text-green-700' %}
+                    {% elif 'UPDATE' in log.action or 'DELETE' in log.action %}
+                        {% set badge_class = 'bg-amber-100 text-amber-700' %}
+                    {% endif %}
+                    <span class="{{ badge_class }} px-3 py-1 rounded-full text-[10px] font-bold tracking-tighter uppercase border border-current opacity-80">
+                        {{ log.action }}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-xs font-mono text-blue-600">{{ log.ip_address }}</div>
+                    <div class="text-[10px] text-slate-400 truncate max-w-37.5" title="{{ log.user_agent }}">
+                        {{ log.user_agent }}
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <button
+                        onclick="openLogModal(this)"
+                        data-id="{{ log.id }}"
+                        data-ts="{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}"
+                        data-user="{{ log.username or 'Anónimo' }}"
+                        data-action="{{ log.action }}"
+                        data-ip="{{ log.ip_address or '—' }}"
+                        data-ua="{{ log.user_agent or '—' }}"
+                        data-details="{{ log.details | e }}"
+                        class="btn btn-xs btn-circle btn-ghost text-slate-500 hover:text-slate-900">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Paginación -->
+<!-- ===== Modal Detalles de Log ===== -->
+<div id="modal-log-detail" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeLogModal()"></div>
+    <!-- Panel -->
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800">Entrada de Auditoría</h3>
+                    <p id="modal-log-id" class="text-xs text-slate-400 font-mono">Log #–</p>
+                </div>
+            </div>
+            <button onclick="closeLogModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <!-- Body -->
+        <div class="overflow-y-auto p-6 space-y-4">
+            <!-- Row 1 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Timestamp</p>
+                    <p id="modal-log-ts" class="font-mono text-sm text-slate-700">–</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Usuario</p>
+                    <p id="modal-log-user" class="text-sm font-semibold text-slate-700">–</p>
+                </div>
+            </div>
+            <!-- Row 2 -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Acción</p>
+                    <span id="modal-log-action" class="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter border">–</span>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Dirección IP</p>
+                    <p id="modal-log-ip" class="font-mono text-sm text-blue-600">–</p>
+                </div>
+            </div>
+            <!-- User Agent -->
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">User Agent</p>
+                <p id="modal-log-ua" class="text-xs text-slate-500 break-all leading-relaxed">–</p>
+            </div>
+            <!-- Details -->
+            <div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Detalles</p>
+                <div id="modal-log-details" class="bg-white rounded-xl px-4 py-3 text-sm text-slate-700 border border-slate-200 min-h-[3rem] leading-relaxed whitespace-pre-wrap">–</div>
+            </div>
+        </div>
+        <!-- Footer -->
+        <div class="flex justify-end px-6 py-4 border-t border-slate-100 shrink-0">
+            <button onclick="closeLogModal()" class="btn btn-ghost">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+{% if pagination.pages > 1 %}
+<div class="mt-8 flex justify-center">
+    <nav class="flex items-center space-x-2">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.audit_logs', page=pagination.prev_num, action=current_action, username=current_username, date=current_date) }}" class="btn btn-sm btn-outline">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </a>
+        {% endif %}
+        
+        <div class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm font-bold text-slate-700">
+            Página {{ pagination.page }} de {{ pagination.pages }}
+        </div>
+
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.audit_logs', page=pagination.next_num, action=current_action, username=current_username, date=current_date) }}" class="btn btn-sm btn-outline">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </a>
+        {% endif %}
+    </nav>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openLogModal(btn) {
+        const id      = btn.dataset.id;
+        const ts      = btn.dataset.ts;
+        const user    = btn.dataset.user;
+        const action  = btn.dataset.action;
+        const ip      = btn.dataset.ip;
+        const ua      = btn.dataset.ua;
+        const details = btn.dataset.details;
+
+        document.getElementById('modal-log-id').textContent      = 'Log #' + id;
+        document.getElementById('modal-log-ts').textContent      = ts;
+        document.getElementById('modal-log-user').textContent    = user;
+        document.getElementById('modal-log-ip').textContent      = ip;
+        document.getElementById('modal-log-ua').textContent      = ua;
+        document.getElementById('modal-log-details').textContent = details || '—';
+
+        // Badge color
+        const badge = document.getElementById('modal-log-action');
+        badge.textContent = action;
+        badge.className = 'inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter border ';
+        if (action.includes('FAIL') || action.includes('UNAUTHORIZED')) {
+            badge.className += 'bg-red-100 text-red-700 border-red-200';
+        } else if (action.includes('SUCCESS')) {
+            badge.className += 'bg-green-100 text-green-700 border-green-200';
+        } else if (action.includes('UPDATE') || action.includes('DELETE') || action.includes('TOGGLE')) {
+            badge.className += 'bg-amber-100 text-amber-700 border-amber-200';
+        } else {
+            badge.className += 'bg-blue-100 text-blue-700 border-blue-200';
+        }
+
+        document.getElementById('modal-log-detail').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLogModal() {
+        document.getElementById('modal-log-detail').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeLogModal();
+    });
+</script>
+{% endblock %}

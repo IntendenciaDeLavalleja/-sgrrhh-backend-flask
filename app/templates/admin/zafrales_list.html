@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Planilla Zafral{% endblock %}
+
+{% block content %}
+<div class="admin-page-header mb-6">
+    <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Planilla Zafral</h1>
+        <p class="mt-1 text-slate-500">Funcionarios zafrales — total: <strong>{{ zafrales|length }}</strong></p>
+    </div>
+    <a href="{{ url_for('admin.zafrales_nuevo') }}" class="btn btn-success">+ Nuevo Zafral</a>
+</div>
+
+<!-- Filtros -->
+<form method="GET" action="{{ url_for('admin.zafrales_list') }}" class="mb-6 flex flex-wrap gap-3 items-end bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+    <div class="flex-1 min-w-[180px]">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Buscar (CI / nombre)</label>
+        <input type="text" name="q" value="{{ q }}"
+               class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300"
+               placeholder="Ej: García, 12345678">
+    </div>
+    <div class="min-w-[150px]">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Estado</label>
+        <select name="estado" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <option value="">Todos</option>
+            {% for e in estados %}
+            <option value="{{ e.nombre }}" {% if estado_sel == e.nombre %}selected{% endif %}>{{ e.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="min-w-[150px]">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Tipo</label>
+        <select name="tipo" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <option value="">Todos</option>
+            {% for t in tipos %}
+            <option value="{{ t.nombre }}" {% if tipo_sel == t.nombre %}selected{% endif %}>{{ t.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="min-w-[180px]">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Dependencia</label>
+        <select name="dep_id" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-300">
+            <option value="">Todas</option>
+            {% for d in dependencias %}
+            <option value="{{ d.id }}" {% if dep_id_sel == d.id %}selected{% endif %}>{{ d.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="flex gap-2">
+        <button type="submit" class="btn btn-success">Filtrar</button>
+        <a href="{{ url_for('admin.zafrales_list') }}" class="btn btn-ghost">Limpiar</a>
+    </div>
+</form>
+
+<!-- Tabla -->
+{% if zafrales %}
+<div class="admin-table-wrap bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+    <table class="admin-table text-sm">
+        <thead class="bg-slate-50 border-b border-slate-100">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">CI</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Nombre completo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Dependencia</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Tarea</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Tipo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">F. Ingreso</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Estado</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+            {% for z in zafrales %}
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 admin-nowrap font-mono text-slate-600">{{ z.ci }}</td>
+                <td class="px-4 py-3 font-semibold text-slate-900">{{ z.apellidos }}, {{ z.nombres }}</td>
+                <td class="px-4 py-3 text-slate-600 admin-truncate">{{ z.dependencia.nombre if z.dependencia else '—' }}</td>
+                <td class="px-4 py-3 text-slate-600 admin-truncate">{{ z.tarea.nombre if z.tarea else '—' }}</td>
+                <td class="px-4 py-3 text-slate-500 text-xs admin-nowrap">{{ z.tipo_zafral }}</td>
+                <td class="px-4 py-3 admin-nowrap text-slate-500">{{ z.fecha_ingreso.strftime('%d/%m/%Y') if z.fecha_ingreso else '—' }}</td>
+                <td class="px-4 py-3 admin-nowrap">
+                    {% if z.estado == 'Activo' %}
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">{{ z.estado }}</span>
+                    {% elif z.estado == 'Baja' %}
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">{{ z.estado }}</span>
+                    {% else %}
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">{{ z.estado }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 admin-nowrap">
+                    <div class="flex gap-1">
+                        <a href="{{ url_for('admin.zafrales_editar', zaf_id=z.id) }}" class="btn btn-xs btn-ghost">Editar</a>
+                        <form action="{{ url_for('admin.zafrales_eliminar', zaf_id=z.id) }}" method="POST"
+                              onsubmit="return confirm('¿Eliminar a {{ z.nombres }} {{ z.apellidos }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit" class="btn btn-xs btn-outline btn-error">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="flex flex-col items-center justify-center py-24 text-center">
+    <svg class="w-16 h-16 text-slate-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+    <h3 class="text-lg font-bold text-slate-400 mb-1">Sin funcionarios zafrales</h3>
+    <p class="text-slate-400 text-sm">
+        {% if q or estado_sel or dep_id_sel or tipo_sel %}No hay resultados para los filtros aplicados.
+        {% else %}Aún no hay funcionarios zafrales registrados.{% endif %}
+    </p>
+    {% if not (q or estado_sel or dep_id_sel or tipo_sel) %}
+    <a href="{{ url_for('admin.zafrales_nuevo') }}" class="btn btn-success mt-4">+ Agregar el primero</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Catálogos RRHH{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Catálogos de RRHH</h1>
+    <p class="mt-2 text-slate-500">Administrá las opciones que aparecen en los formularios del sistema.</p>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6 overflow-x-auto">
+    <div class="flex gap-1 border-b border-slate-200 min-w-max">
+        {% for key, info in catalogs.items() %}
+        <button
+            onclick="showTab('{{ key }}')"
+            id="tab-btn-{{ key }}"
+            class="tab-btn px-4 py-2 text-sm font-semibold rounded-t-lg border-b-2 transition-colors
+                   {% if loop.first %}border-blue-600 text-blue-600{% else %}border-transparent text-slate-500 hover:text-slate-700{% endif %}">
+            {{ info.label }}
+        </button>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Tab Contents -->
+{% for key, info in catalogs.items() %}
+<div id="tab-{{ key }}" class="tab-panel {% if not loop.first %}hidden{% endif %}">
+    <div class="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+
+        <!-- Header row -->
+        <div class="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-100">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">{{ info.label }}</h2>
+                <p class="text-sm text-slate-500">{{ info.registros | length }} elemento(s) registrado(s)</p>
+            </div>
+            <button
+                data-modal-target="modal-add-{{ key }}"
+                data-modal-toggle="modal-add-{{ key }}"
+                class="btn btn-primary btn-sm">
+                + Agregar
+            </button>
+        </div>
+
+        <!-- Items table -->
+        {% if info.registros %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead class="bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Nombre</th>
+                        <th class="px-6 py-3 text-center">Estado</th>
+                        <th class="px-6 py-3 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for item in info.registros %}
+                    <tr class="hover:bg-slate-50 transition-colors {% if not item.activo %}opacity-50{% endif %}">
+                        <td class="px-6 py-3 font-medium text-slate-900">{{ item.nombre }}</td>
+                        <td class="px-6 py-3 text-center">
+                            <form action="{{ url_for('admin.hr_toggle_opcion', cat=key, item_id=item.id) }}" method="POST" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit"
+                                    class="text-xs px-2 py-1 rounded-full font-semibold border transition-colors
+                                           {% if item.activo %}bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100
+                                           {% else %}bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200{% endif %}">
+                                    {{ 'Activo' if item.activo else 'Inactivo' }}
+                                </button>
+                            </form>
+                        </td>
+                        <td class="px-6 py-3">
+                            <div class="flex justify-end gap-2">
+                                <button
+                                    data-modal-target="modal-edit-{{ key }}-{{ item.id }}"
+                                    data-modal-toggle="modal-edit-{{ key }}-{{ item.id }}"
+                                    class="btn btn-xs btn-ghost">Editar</button>
+                                <form action="{{ url_for('admin.hr_delete_opcion', cat=key, item_id=item.id) }}" method="POST"
+                                      onsubmit="return confirm('¿Eliminar &quot;{{ item.nombre }}&quot;? Esta acción no se puede deshacer.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-xs btn-outline btn-error">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="px-6 py-10 text-center text-slate-400">
+            <p class="text-4xl mb-3">📋</p>
+            <p>No hay opciones en este catálogo todavía.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Modales: Editar cada item -->
+    {% for item in info.registros %}
+    <div id="modal-edit-{{ key }}-{{ item.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-sm m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Editar — {{ info.label }}</h3>
+                <button data-modal-toggle="modal-edit-{{ key }}-{{ item.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_update_opcion', cat=key, item_id=item.id) }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                    <input type="text" name="nombre" value="{{ item.nombre }}"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-edit-{{ key }}-{{ item.id }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Modal: Agregar nuevo -->
+    <div id="modal-add-{{ key }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-sm m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Agregar a {{ info.label }}</h3>
+                <button data-modal-toggle="modal-add-{{ key }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_create_opcion', cat=key) }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                    <input type="text" name="nombre"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="Ej: Nuevo valor..." required autofocus />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-add-{{ key }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function showTab(key) {
+        // Hide all panels and reset all buttons
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('border-blue-600', 'text-blue-600');
+            b.classList.add('border-transparent', 'text-slate-500');
+        });
+        // Show selected
+        const panel = document.getElementById('tab-' + key);
+        if (panel) panel.classList.remove('hidden');
+        const btn = document.getElementById('tab-btn-' + key);
+        if (btn) {
+            btn.classList.add('border-blue-600', 'text-blue-600');
+            btn.classList.remove('border-transparent', 'text-slate-500');
+        }
+    }
+
+    // On load, check URL hash for tab
+    window.addEventListener('DOMContentLoaded', function () {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#tab-')) {
+            const key = hash.replace('#tab-', '');
+            if (document.getElementById('tab-' + key)) {
+                showTab(key);
+            }
+        }
+    });
+</script>
+{% endblock %}

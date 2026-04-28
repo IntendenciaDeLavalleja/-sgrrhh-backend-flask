@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}{% if modo == 'editar' %}Editar Funcionario{% else %}Nuevo Funcionario{% endif %}{% endblock %}
+
+{% block content %}
+{% set fd = form_data %}
+{% set f = funcionario if modo == 'editar' else none %}
+
+<div class="admin-page-header mb-6">
+    <div>
+        <nav class="text-sm text-slate-400 mb-1">
+            <a href="{{ url_for('admin.funcionarios_list') }}" class="hover:text-blue-600">Planilla de Personal</a>
+            <span class="mx-1">/</span>
+            <span class="text-slate-700">{% if modo == 'editar' %}Editar{% else %}Nuevo{% endif %}</span>
+        </nav>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">
+            {% if modo == 'editar' %}Editar Funcionario{% else %}Nuevo Funcionario{% endif %}
+        </h1>
+    </div>
+    <a href="{{ url_for('admin.funcionarios_list') }}" class="btn btn-ghost">Volver al listado</a>
+</div>
+
+<form method="POST"
+      action="{% if modo == 'editar' %}{{ url_for('admin.funcionarios_editar', func_id=f.id) }}{% else %}{{ url_for('admin.funcionarios_nuevo') }}{% endif %}"
+      class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <!-- Datos personales -->
+    <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+        <h2 class="text-base font-bold text-slate-700 mb-4 pb-2 border-b border-slate-100">Datos personales</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Cédula de identidad <span class="text-red-500">*</span></label>
+                <input type="text" name="ci" value="{{ fd.get('ci', f.ci if f else '') }}" required
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300"
+                       placeholder="Ej: 12345678">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Nombres <span class="text-red-500">*</span></label>
+                <input type="text" name="nombres" value="{{ fd.get('nombres', f.nombres if f else '') }}" required
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Apellidos <span class="text-red-500">*</span></label>
+                <input type="text" name="apellidos" value="{{ fd.get('apellidos', f.apellidos if f else '') }}" required
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Género <span class="text-red-500">*</span></label>
+                <select name="genero" required
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <option value="">Seleccionar…</option>
+                    {% for g in generos %}
+                    <option value="{{ g.nombre }}" {% if fd.get('genero', f.genero if f else '') == g.nombre %}selected{% endif %}>{{ g.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Estado civil</label>
+                <select name="estado_civil"
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <option value="">Seleccionar…</option>
+                    {% for ec in estados_civiles %}
+                    <option value="{{ ec.nombre }}" {% if fd.get('estado_civil', f.estado_civil if f else '') == ec.nombre %}selected{% endif %}>{{ ec.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Fecha de nacimiento</label>
+                <input type="date" name="fecha_nacimiento"
+                       value="{{ fd.get('fecha_nacimiento', f.fecha_nacimiento.isoformat() if f and f.fecha_nacimiento else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">País de nacimiento</label>
+                <input type="text" name="pais_nacimiento" value="{{ fd.get('pais_nacimiento', f.pais_nacimiento if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300"
+                       placeholder="Ej: Uruguay">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Departamento de nacimiento</label>
+                <input type="text" name="departamento_nacimiento" value="{{ fd.get('departamento_nacimiento', f.departamento_nacimiento if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300"
+                       placeholder="Ej: Lavalleja">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Datos laborales -->
+    <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+        <h2 class="text-base font-bold text-slate-700 mb-4 pb-2 border-b border-slate-100">Datos laborales</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Dependencia <span class="text-red-500">*</span></label>
+                <select name="dependencia_id" id="sel-dependencia" required
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <option value="">Seleccionar…</option>
+                    {% for d in dependencias %}
+                    <option value="{{ d.id }}" {% if (fd.get('dependencia_id', f.dependencia_id if f else '')|string) == d.id|string %}selected{% endif %}>{{ d.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Cargo <span class="text-red-500">*</span></label>
+                <select name="cargo_id" id="sel-cargo" required
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <option value="">Seleccionar dependencia primero…</option>
+                    {% if f %}
+                    {% for c in cargos %}
+                    {% if c.dependencia_id == f.dependencia_id %}
+                    <option value="{{ c.id }}" {% if c.id == f.cargo_id %}selected{% endif %}>{{ c.nombre }}</option>
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Fecha de ingreso <span class="text-red-500">*</span></label>
+                <input type="date" name="fecha_ingreso" required
+                       value="{{ fd.get('fecha_ingreso', f.fecha_ingreso.isoformat() if f and f.fecha_ingreso else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Régimen laboral <span class="text-red-500">*</span></label>
+                <select name="regimen_laboral" required
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <option value="">Seleccionar…</option>
+                    {% for r in regimenes %}
+                    <option value="{{ r.nombre }}" {% if fd.get('regimen_laboral', f.regimen_laboral if f else '') == r.nombre %}selected{% endif %}>{{ r.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Estado <span class="text-red-500">*</span></label>
+                <select name="estado" id="sel-estado"
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    {% for e in estados_funcionario %}
+                    <option value="{{ e.nombre }}" {% if fd.get('estado', f.estado if f else 'Presupuestado') == e.nombre %}selected{% endif %}>{{ e.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Inasistencias</label>
+                <input type="number" name="inasistencias" min="0"
+                       value="{{ fd.get('inasistencias', f.inasistencias if f else 0) }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div id="div-motivo-baja" class="sm:col-span-2 lg:col-span-3 {% if fd.get('estado', f.estado if f else '') != 'Baja' %}hidden{% endif %}">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Motivo de baja</label>
+                <input type="text" name="motivo_baja" value="{{ fd.get('motivo_baja', f.motivo_baja if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Contacto y domicilio -->
+    <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+        <h2 class="text-base font-bold text-slate-700 mb-4 pb-2 border-b border-slate-100">Contacto y domicilio</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+                <input type="text" name="telefono" value="{{ fd.get('telefono', f.telefono if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Correo electrónico</label>
+                <input type="email" name="email" value="{{ fd.get('email', f.email if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Otro contacto</label>
+                <input type="text" name="otro_contacto" value="{{ fd.get('otro_contacto', f.otro_contacto if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Calle</label>
+                <input type="text" name="calle" value="{{ fd.get('calle', f.calle if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Entre calles</label>
+                <input type="text" name="entre_calles" value="{{ fd.get('entre_calles', f.entre_calles if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Zona / Barrio</label>
+                <input type="text" name="zona" value="{{ fd.get('zona', f.zona if f else '') }}"
+                       class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Educación -->
+    <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+        <h2 class="text-base font-bold text-slate-700 mb-4 pb-2 border-b border-slate-100">Nivel educativo</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            {% set edu_labels = [
+                ('educacion_primaria', 'Primaria'),
+                ('educacion_secundaria', 'Secundaria'),
+                ('educacion_bachillerato', 'Bachillerato'),
+                ('educacion_terciaria', 'Terciaria / Universidad'),
+            ] %}
+            {% for field, label in edu_labels %}
+            {% set cur_val = fd.get(field, f[field] if f else '') if f else fd.get(field, '') %}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">{{ label }}</label>
+                <select name="{{ field }}"
+                        class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    <option value="">Sin datos</option>
+                    {% for e in estados_educacion %}
+                    <option value="{{ e.nombre }}" {% if (cur_val or '') == e.nombre %}selected{% endif %}>{{ e.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+
+            <div class="sm:col-span-2 lg:col-span-4">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Otras capacitaciones</label>
+                <textarea name="otras_capacitaciones" rows="2"
+                          class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300">{{ fd.get('otras_capacitaciones', f.otras_capacitaciones if f else '') }}</textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
+        <h2 class="text-base font-bold text-slate-700 mb-4 pb-2 border-b border-slate-100">Observaciones</h2>
+        <textarea name="observaciones" rows="3"
+                  class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  placeholder="Notas adicionales…">{{ fd.get('observaciones', f.observaciones if f else '') }}</textarea>
+    </div>
+
+    <!-- Acciones -->
+    <div class="flex gap-3">
+        <button type="submit" class="btn btn-primary">
+            {% if modo == 'editar' %}Guardar cambios{% else %}Crear funcionario{% endif %}
+        </button>
+        <a href="{{ url_for('admin.funcionarios_list') }}" class="btn btn-ghost">Cancelar</a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const cargosPorDep = {{ cargos_por_dep_json|safe }};
+const selDep = document.getElementById('sel-dependencia');
+const selCargo = document.getElementById('sel-cargo');
+const selEstado = document.getElementById('sel-estado');
+const divMotivoBaja = document.getElementById('div-motivo-baja');
+
+function updateCargos() {
+    const depId = selDep.value;
+    const prevVal = selCargo.value;
+    selCargo.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = depId ? 'Seleccionar cargo…' : 'Seleccionar dependencia primero…';
+    selCargo.appendChild(placeholder);
+
+    if (depId && cargosPorDep[depId]) {
+        cargosPorDep[depId].forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.nombre;
+            if (String(c.id) === String(prevVal)) opt.selected = true;
+            selCargo.appendChild(opt);
+        });
+    }
+}
+
+function updateMotivoBaja() {
+    if (selEstado && divMotivoBaja) {
+        divMotivoBaja.classList.toggle('hidden', selEstado.value !== 'Baja');
+    }
+}
+
+selDep.addEventListener('change', updateCargos);
+if (selEstado) selEstado.addEventListener('change', updateMotivoBaja);
+
+// Inicializar si hay una dependencia ya seleccionada (modo editar / error de validación)
+if (selDep.value) updateCargos();
+updateMotivoBaja();
+</script>
+{% endblock %}

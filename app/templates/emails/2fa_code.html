@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .code-box {
+            background-color: #f6f8fa;
+            border: 2px dashed #0366d6;
+            border-radius: 6px;
+            font-size: 32px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+            margin: 20px 0;
+            letter-spacing: 5px;
+            color: #24292e;
+        }
+        .footer {
+            font-size: 12px;
+            color: #586069;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: #0366d6;">Sistema de Gestión de RRHH</h1>
+            <h2>Intendencia de Lavalleja</h2>
+            <h3 style="font-weight: normal;">Verificación de Seguridad</h3>
+        </div>
+        <p>Hola,</p>
+        <p>Has solicitado acceder al panel de administración. Utilice el siguiente código para completar su inicio de sesión:</p>
+        
+        <div class="code-box">
+            {{ code }}
+        </div>
+        
+        <p>Este código es válido por <strong>10 minutos</strong>. Si no ha solicitado este acceso, puede ignorar este correo.</p>
+        
+        <div class="footer">
+            <p>Este es un mensaje automático, por favor no responda a este correo.</p>
+            <p>&copy; 2026 Intendencia de Lavalleja</p>
+        </div>
+    </div>
+</body>
+</html>

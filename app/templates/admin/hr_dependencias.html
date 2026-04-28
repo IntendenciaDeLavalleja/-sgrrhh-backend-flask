@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+{% block title %}Dependencias, Cargos y Tareas{% endblock %}
+
+{% block content %}
+<div class="admin-page-header mb-6">
+    <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Dependencias, Cargos y Tareas</h1>
+        <p class="mt-1 text-slate-500">Gestioná la estructura organizacional.</p>
+    </div>
+    {% if tab == 'dependencias' or not tab %}
+    <button data-modal-target="modal-nueva-dep" data-modal-toggle="modal-nueva-dep" class="btn btn-primary">+ Nueva Dependencia</button>
+    {% elif tab == 'cargos' %}
+    <button data-modal-target="modal-nuevo-cargo" data-modal-toggle="modal-nuevo-cargo" class="btn btn-primary">+ Nuevo Cargo</button>
+    {% elif tab == 'tareas' %}
+    <button data-modal-target="modal-nueva-tarea" data-modal-toggle="modal-nueva-tarea" class="btn btn-primary">+ Nueva Tarea</button>
+    {% endif %}
+</div>
+
+<!-- Tabs -->
+<div class="mb-6 border-b border-slate-200">
+    <ul class="flex gap-1 -mb-px text-sm font-medium">
+        <li>
+            <a href="{{ url_for('admin.hr_dependencias', tab='dependencias') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-t-xl border-b-2 transition-colors
+               {% if tab == 'dependencias' or not tab %}border-blue-600 text-blue-600 bg-blue-50{% else %}border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                Dependencias
+                <span class="text-xs px-1.5 py-0.5 rounded-full {% if tab == 'dependencias' or not tab %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-500{% endif %}">{{ dependencias|length }}</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.hr_dependencias', tab='cargos') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-t-xl border-b-2 transition-colors
+               {% if tab == 'cargos' %}border-blue-600 text-blue-600 bg-blue-50{% else %}border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Cargos
+                <span class="text-xs px-1.5 py-0.5 rounded-full {% if tab == 'cargos' %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-500{% endif %}">{{ cargos|length }}</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('admin.hr_dependencias', tab='tareas') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-t-xl border-b-2 transition-colors
+               {% if tab == 'tareas' %}border-blue-600 text-blue-600 bg-blue-50{% else %}border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300{% endif %}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                Tareas
+                <span class="text-xs px-1.5 py-0.5 rounded-full {% if tab == 'tareas' %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-500{% endif %}">{{ tareas|length }}</span>
+            </a>
+        </li>
+    </ul>
+</div>
+
+<!-- ===================== TAB DEPENDENCIAS ===================== -->
+{% if tab == 'dependencias' or not tab %}
+<!-- Lista de dependencias -->
+{% if dependencias %}
+<div class="space-y-4">
+    {% for dep in dependencias %}
+    <div class="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+        <!-- Cabecera de la dependencia -->
+        <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 truncate">{{ dep.nombre }}</h3>
+                <span class="text-xs text-slate-400 shrink-0">
+                    {{ dep.cargos.count() }} cargo(s) · {{ dep.tareas.count() }} tarea(s)
+                </span>
+            </div>
+            <div class="flex gap-2 shrink-0">
+                <button
+                    data-modal-target="modal-edit-dep-{{ dep.id }}"
+                    data-modal-toggle="modal-edit-dep-{{ dep.id }}"
+                    class="btn btn-sm btn-ghost">
+                    Editar
+                </button>
+                <form action="{{ url_for('admin.hr_delete_dependencia', dep_id=dep.id) }}" method="POST"
+                      onsubmit="return confirm('¿Eliminar la dependencia {{ dep.nombre }}? Solo se puede si no tiene funcionarios.')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-sm btn-outline btn-error">Eliminar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Cuerpo expandido -->
+        <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+
+            <!-- Cargos -->
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Cargos</h4>
+                    <button data-modal-target="modal-cargo-{{ dep.id }}" data-modal-toggle="modal-cargo-{{ dep.id }}"
+                        class="btn btn-xs btn-primary">+ Agregar</button>
+                </div>
+                {% set cargos_dep = dep.cargos.order_by('nombre').all() %}
+                {% if cargos_dep %}
+                <ul class="space-y-2">
+                    {% for cargo in cargos_dep %}
+                    <li class="flex items-center justify-between gap-2 text-sm bg-slate-50 px-3 py-2 rounded-xl">
+                        <span class="text-slate-800 font-medium truncate">{{ cargo.nombre }}</span>
+                        <div class="flex gap-1 shrink-0">
+                            <button
+                                data-modal-target="modal-edit-cargo-{{ cargo.id }}"
+                                data-modal-toggle="modal-edit-cargo-{{ cargo.id }}"
+                                class="btn btn-xs btn-ghost">Editar</button>
+                            <form action="{{ url_for('admin.hr_delete_cargo', cargo_id=cargo.id) }}" method="POST"
+                                  onsubmit="return confirm('¿Eliminar cargo {{ cargo.nombre }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="btn btn-xs btn-outline btn-error">✕</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-slate-400 italic">Sin cargos aún.</p>
+                {% endif %}
+            </div>
+
+            <!-- Tareas -->
+            <div class="p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-semibold text-slate-700 uppercase tracking-wide">Tareas</h4>
+                    <button data-modal-target="modal-tarea-{{ dep.id }}" data-modal-toggle="modal-tarea-{{ dep.id }}"
+                        class="btn btn-xs btn-primary">+ Agregar</button>
+                </div>
+                {% set tareas_dep = dep.tareas.order_by('nombre').all() %}
+                {% if tareas_dep %}
+                <ul class="space-y-2">
+                    {% for tarea in tareas_dep %}
+                    <li class="flex items-center justify-between gap-2 text-sm bg-slate-50 px-3 py-2 rounded-xl">
+                        <span class="text-slate-800 font-medium truncate">{{ tarea.nombre }}</span>
+                        <div class="flex gap-1 shrink-0">
+                            <button
+                                data-modal-target="modal-edit-tarea-{{ tarea.id }}"
+                                data-modal-toggle="modal-edit-tarea-{{ tarea.id }}"
+                                class="btn btn-xs btn-ghost">Editar</button>
+                            <form action="{{ url_for('admin.hr_delete_tarea', tarea_id=tarea.id) }}" method="POST"
+                                  onsubmit="return confirm('¿Eliminar tarea {{ tarea.nombre }}?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="btn btn-xs btn-outline btn-error">✕</button>
+                            </form>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-sm text-slate-400 italic">Sin tareas aún.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Editar dependencia -->
+    <div id="modal-edit-dep-{{ dep.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Editar Dependencia</h3>
+                <button data-modal-toggle="modal-edit-dep-{{ dep.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_update_dependencia', dep_id=dep.id) }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                    <input type="text" name="nombre" value="{{ dep.nombre }}"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-edit-dep-{{ dep.id }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Agregar Cargo -->
+    <div id="modal-cargo-{{ dep.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Nuevo Cargo — {{ dep.nombre }}</h3>
+                <button data-modal-toggle="modal-cargo-{{ dep.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_create_cargo') }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="dependencia_id" value="{{ dep.id }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del Cargo</label>
+                    <input type="text" name="nombre" placeholder="Ej: Administrativo"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-cargo-{{ dep.id }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Agregar Tarea -->
+    <div id="modal-tarea-{{ dep.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Nueva Tarea — {{ dep.nombre }}</h3>
+                <button data-modal-toggle="modal-tarea-{{ dep.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_create_tarea') }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="dependencia_id" value="{{ dep.id }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre de la Tarea</label>
+                    <input type="text" name="nombre" placeholder="Ej: Cortar pasto"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-tarea-{{ dep.id }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modales: Editar cada cargo -->
+    {% for cargo in dep.cargos.all() %}
+    <div id="modal-edit-cargo-{{ cargo.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Editar Cargo</h3>
+                <button data-modal-toggle="modal-edit-cargo-{{ cargo.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_update_cargo', cargo_id=cargo.id) }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                    <input type="text" name="nombre" value="{{ cargo.nombre }}"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-edit-cargo-{{ cargo.id }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Modales: Editar cada tarea -->
+    {% for tarea in dep.tareas.all() %}
+    <div id="modal-edit-tarea-{{ tarea.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+        <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+            <div class="flex items-center justify-between p-5 border-b">
+                <h3 class="text-lg font-semibold">Editar Tarea</h3>
+                <button data-modal-toggle="modal-edit-tarea-{{ tarea.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+            </div>
+            <form action="{{ url_for('admin.hr_update_tarea', tarea_id=tarea.id) }}" method="POST" class="p-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                    <input type="text" name="nombre" value="{{ tarea.nombre }}"
+                        class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" data-modal-toggle="modal-edit-tarea-{{ tarea.id }}" class="btn btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% endfor %}
+</div>
+{% else %}
+<div class="flex flex-col items-center justify-center py-20 text-center">
+    <svg class="w-16 h-16 text-slate-200 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+    <h3 class="text-lg font-bold text-slate-400 mb-1">Sin dependencias todavía</h3>
+    <p class="text-slate-400 text-sm mb-4">Creá la primera dependencia para comenzar.</p>
+    <button data-modal-target="modal-nueva-dep" data-modal-toggle="modal-nueva-dep" class="btn btn-primary">+ Nueva Dependencia</button>
+</div>
+{% endif %}
+
+<!-- ===================== TAB CARGOS ===================== -->
+{% elif tab == 'cargos' %}
+{% if cargos %}
+<div class="admin-table-wrap bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+    <table class="admin-table text-sm">
+        <thead class="bg-slate-50 border-b border-slate-100">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Cargo</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Dependencia</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Func.</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+            {% for cargo in cargos %}
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-900">{{ cargo.nombre }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ cargo.dependencia.nombre if cargo.dependencia else '—' }}</td>
+                <td class="px-4 py-3 text-slate-500">{{ cargo.funcionarios.count() }}</td>
+                <td class="px-4 py-3 admin-nowrap">
+                    <div class="flex gap-1">
+                        <button data-modal-target="modal-edit-cargo-flat-{{ cargo.id }}"
+                                data-modal-toggle="modal-edit-cargo-flat-{{ cargo.id }}"
+                                class="btn btn-xs btn-ghost">Editar</button>
+                        <form action="{{ url_for('admin.hr_delete_cargo', cargo_id=cargo.id) }}" method="POST"
+                              onsubmit="return confirm('¿Eliminar cargo {{ cargo.nombre }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit" class="btn btn-xs btn-outline btn-error">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- Modales editar cargos (tab cargos) -->
+{% for cargo in cargos %}
+<div id="modal-edit-cargo-flat-{{ cargo.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+    <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+        <div class="flex items-center justify-between p-5 border-b">
+            <h3 class="text-lg font-semibold">Editar Cargo</h3>
+            <button data-modal-toggle="modal-edit-cargo-flat-{{ cargo.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </div>
+        <form action="{{ url_for('admin.hr_update_cargo', cargo_id=cargo.id) }}" method="POST" class="p-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                <input type="text" name="nombre" value="{{ cargo.nombre }}"
+                    class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" data-modal-toggle="modal-edit-cargo-flat-{{ cargo.id }}" class="btn btn-ghost">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="flex flex-col items-center justify-center py-20 text-center">
+    <h3 class="text-lg font-bold text-slate-400 mb-1">Sin cargos todavía</h3>
+    <p class="text-slate-400 text-sm">Creá dependencias primero y luego agregá cargos desde la pestaña Dependencias.</p>
+</div>
+{% endif %}
+
+<!-- ===================== TAB TAREAS ===================== -->
+{% elif tab == 'tareas' %}
+{% if tareas %}
+<div class="admin-table-wrap bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+    <table class="admin-table text-sm">
+        <thead class="bg-slate-50 border-b border-slate-100">
+            <tr>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Tarea</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Dependencia</th>
+                <th class="px-4 py-3 text-left font-semibold text-slate-500 text-xs uppercase tracking-wide">Func. Zafrales</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-50">
+            {% for tarea in tareas %}
+            <tr class="hover:bg-slate-50 transition-colors">
+                <td class="px-4 py-3 font-semibold text-slate-900">{{ tarea.nombre }}</td>
+                <td class="px-4 py-3 text-slate-600">{{ tarea.dependencia.nombre if tarea.dependencia else '—' }}</td>
+                <td class="px-4 py-3 text-slate-500">{{ tarea.funcionarios_zafrales.count() }}</td>
+                <td class="px-4 py-3 admin-nowrap">
+                    <div class="flex gap-1">
+                        <button data-modal-target="modal-edit-tarea-flat-{{ tarea.id }}"
+                                data-modal-toggle="modal-edit-tarea-flat-{{ tarea.id }}"
+                                class="btn btn-xs btn-ghost">Editar</button>
+                        <form action="{{ url_for('admin.hr_delete_tarea', tarea_id=tarea.id) }}" method="POST"
+                              onsubmit="return confirm('¿Eliminar tarea {{ tarea.nombre }}?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button type="submit" class="btn btn-xs btn-outline btn-error">Eliminar</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<!-- Modales editar tareas (tab tareas) -->
+{% for tarea in tareas %}
+<div id="modal-edit-tarea-flat-{{ tarea.id }}" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+    <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+        <div class="flex items-center justify-between p-5 border-b">
+            <h3 class="text-lg font-semibold">Editar Tarea</h3>
+            <button data-modal-toggle="modal-edit-tarea-flat-{{ tarea.id }}" class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </div>
+        <form action="{{ url_for('admin.hr_update_tarea', tarea_id=tarea.id) }}" method="POST" class="p-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre</label>
+                <input type="text" name="nombre" value="{{ tarea.nombre }}"
+                    class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" data-modal-toggle="modal-edit-tarea-flat-{{ tarea.id }}" class="btn btn-ghost">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="flex flex-col items-center justify-center py-20 text-center">
+    <h3 class="text-lg font-bold text-slate-400 mb-1">Sin tareas todavía</h3>
+    <p class="text-slate-400 text-sm">Creá dependencias primero y luego agregá tareas desde la pestaña Dependencias.</p>
+</div>
+{% endif %}
+
+{% endif %}
+<!-- ===================== FIN TABS ===================== -->
+
+<!-- Modal: Nueva Dependencia (siempre disponible) -->
+<div id="modal-nueva-dep" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+    <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+        <div class="flex items-center justify-between p-5 border-b">
+            <h3 class="text-lg font-semibold">Nueva Dependencia</h3>
+            <button data-modal-toggle="modal-nueva-dep" class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </div>
+        <form action="{{ url_for('admin.hr_dependencias') }}" method="POST" class="p-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre de la Dependencia</label>
+                <input type="text" name="nombre" placeholder="Ej: Direccion de Vialidad"
+                    class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" data-modal-toggle="modal-nueva-dep" class="btn btn-ghost">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Crear</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Nuevo Cargo global (tab cargos) -->
+{% if tab == 'cargos' %}
+<div id="modal-nuevo-cargo" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+    <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+        <div class="flex items-center justify-between p-5 border-b">
+            <h3 class="text-lg font-semibold">Nuevo Cargo</h3>
+            <button data-modal-toggle="modal-nuevo-cargo" class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </div>
+        <form action="{{ url_for('admin.hr_create_cargo') }}" method="POST" class="p-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Dependencia</label>
+                <select name="dependencia_id" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    <option value="">Seleccionar…</option>
+                    {% for d in dependencias %}
+                    <option value="{{ d.id }}">{{ d.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre del Cargo</label>
+                <input type="text" name="nombre" placeholder="Ej: Administrativo"
+                    class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" data-modal-toggle="modal-nuevo-cargo" class="btn btn-ghost">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Crear</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal: Nueva Tarea global (tab tareas) -->
+{% if tab == 'tareas' %}
+<div id="modal-nueva-tarea" tabindex="-1" class="hidden overflow-y-auto fixed top-0 right-0 left-0 z-50 flex justify-center items-center w-full h-full bg-black/30">
+    <div class="relative bg-white rounded-3xl shadow w-full max-w-md m-4">
+        <div class="flex items-center justify-between p-5 border-b">
+            <h3 class="text-lg font-semibold">Nueva Tarea</h3>
+            <button data-modal-toggle="modal-nueva-tarea" class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </div>
+        <form action="{{ url_for('admin.hr_create_tarea') }}" method="POST" class="p-5">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Dependencia</label>
+                <select name="dependencia_id" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    <option value="">Seleccionar…</option>
+                    {% for d in dependencias %}
+                    <option value="{{ d.id }}">{{ d.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Nombre de la Tarea</label>
+                <input type="text" name="nombre" placeholder="Ej: Cortar pasto"
+                    class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required />
+            </div>
+            <div class="flex justify-end gap-2">
+                <button type="button" data-modal-toggle="modal-nueva-tarea" class="btn btn-ghost">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Crear</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

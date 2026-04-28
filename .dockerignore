@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files (secrets must come from Coolify env vars)
+.env
+.env.*
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Dev/test artifacts
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.log
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docs/notes
+*.md
+Instructions.txt
+
+# Public static (served by nginx frontend, not Flask)
+public/
