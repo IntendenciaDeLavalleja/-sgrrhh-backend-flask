@@ -1,5 +1,7 @@
 import click
 from flask.cli import with_appcontext
+from sqlalchemy.exc import IntegrityError
+
 from app.extensions import db
 from app.models.user import AdminUser
 
@@ -16,7 +18,11 @@ def create_admin(username, email, password, is_superuser):
     user = AdminUser(username=username, email=email, is_superuser=is_super)
     user.set_password(password)
     db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        raise click.ClickException('El usuario que se está intentando crear ya existe')
     role = "Super Administrador" if is_super else "Administrador"
     print(f"{role} {username} creado exitosamente.")
 

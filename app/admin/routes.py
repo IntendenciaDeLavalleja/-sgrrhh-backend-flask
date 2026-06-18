@@ -10,6 +10,7 @@ from .routes_components import hr  # noqa: F401
 from .routes_components import funcionarios  # noqa: F401
 from .routes_components import zafrales  # noqa: F401
 from .routes_components import usuarios  # noqa: F401
+from .routes_components import contratos  # noqa: F401
 
 
 @admin_bp.route('/')

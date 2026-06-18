@@ -5,10 +5,10 @@ from app.models.hr import (
     Cargo,
     Dependencia,
     EstadoCivilCat,
-    EstadoEducacionCat,
     EstadoFuncionarioCat,
     EstadoZafralCat,
     GeneroCat,
+    NivelEducativoCat,
     RegimenLaboral,
     Tarea,
     TipoZafralCat,
@@ -81,19 +81,17 @@ def hr_delete_area(area_id):
 def hr_cargos():
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
-        area_id = request.form.get('area_id', type=int)
-        if not nombre or not area_id:
-            flash('Nombre y área son obligatorios', 'error')
+        if not nombre:
+            flash('El nombre es obligatorio', 'error')
         else:
-            db.session.add(Cargo(nombre=nombre, dependencia_id=area_id))
+            db.session.add(Cargo(nombre=nombre))
             db.session.commit()
             log_activity('HR_CARGO_CREATE', f'Cargo creado: {nombre}')
             flash(f'Cargo "{nombre}" creado', 'success')
         return redirect(url_for('admin.hr_cargos'))
 
     cargos = Cargo.query.order_by(Cargo.nombre).all()
-    areas = Dependencia.query.order_by(Dependencia.nombre).all()
-    return render_template('admin/hr_cargos.html', cargos=cargos, areas=areas)
+    return render_template('admin/hr_cargos.html', cargos=cargos)
 
 
 @admin_bp.route('/hr/cargos/<int:cargo_id>/update', methods=['POST'])
@@ -135,19 +133,17 @@ def hr_delete_cargo(cargo_id):
 def hr_tareas():
     if request.method == 'POST':
         nombre = (request.form.get('nombre') or '').strip()
-        area_id = request.form.get('area_id', type=int)
-        if not nombre or not area_id:
-            flash('Nombre y área son obligatorios', 'error')
+        if not nombre:
+            flash('El nombre es obligatorio', 'error')
         else:
-            db.session.add(Tarea(nombre=nombre, dependencia_id=area_id))
+            db.session.add(Tarea(nombre=nombre))
             db.session.commit()
             log_activity('HR_TAREA_CREATE', f'Tarea creada: {nombre}')
             flash(f'Tarea "{nombre}" creada', 'success')
         return redirect(url_for('admin.hr_tareas'))
 
     tareas = Tarea.query.order_by(Tarea.nombre).all()
-    areas = Dependencia.query.order_by(Dependencia.nombre).all()
-    return render_template('admin/hr_tareas.html', tareas=tareas, areas=areas)
+    return render_template('admin/hr_tareas.html', tareas=tareas)
 
 
 @admin_bp.route('/hr/tareas/<int:tarea_id>/update', methods=['POST'])
@@ -189,7 +185,7 @@ _CATALOGS: dict[str, tuple[str, type]] = {
     'tipos-zafral': ('Tipos de Zafral', TipoZafralCat),
     'generos': ('Géneros', GeneroCat),
     'estados-civiles': ('Estados Civiles', EstadoCivilCat),
-    'estados-educacion': ('Estados de Educación', EstadoEducacionCat),
+    'niveles-educativos': ('Nivel Educativo', NivelEducativoCat),
     'estados-funcionario': ('Estados de Funcionario', EstadoFuncionarioCat),
     'estados-zafral': ('Estados Funcionario Zafral', EstadoZafralCat),
 }

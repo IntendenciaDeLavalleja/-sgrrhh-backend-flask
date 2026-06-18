@@ -9,9 +9,7 @@ class Dependencia(db.Model):
     nombre = db.Column(db.String(200), nullable=False, unique=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    cargos = db.relationship('Cargo', backref='dependencia', lazy='dynamic')
     funcionarios = db.relationship('Funcionario', backref='dependencia', lazy='dynamic')
-    tareas = db.relationship('Tarea', backref='dependencia', lazy='dynamic')
     funcionarios_zafrales = db.relationship('FuncionarioZafral', backref='dependencia', lazy='dynamic')
 
     def to_dict(self):
@@ -23,8 +21,8 @@ class Cargo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)
-    dependencia_id = db.Column(db.Integer, db.ForeignKey('hr_dependencias.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     funcionarios = db.relationship('Funcionario', backref='cargo', lazy='dynamic')
 
@@ -32,7 +30,6 @@ class Cargo(db.Model):
         return {
             'id': str(self.id),
             'nombre': self.nombre,
-            'dependenciaId': str(self.dependencia_id),
         }
 
 
@@ -66,10 +63,7 @@ class Funcionario(db.Model):
     zona = db.Column(db.String(100), nullable=True)
     observaciones = db.Column(db.Text, nullable=True)
 
-    educacion_primaria = db.Column(db.String(20), nullable=True)
-    educacion_secundaria = db.Column(db.String(20), nullable=True)
-    educacion_bachillerato = db.Column(db.String(20), nullable=True)
-    educacion_terciaria = db.Column(db.String(20), nullable=True)
+    nivel_educativo = db.Column(db.String(100), nullable=True)
     otras_capacitaciones = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -110,10 +104,7 @@ class Funcionario(db.Model):
             'entreCalles': self.entre_calles,
             'zona': self.zona,
             'observaciones': self.observaciones,
-            'educacionPrimaria': self.educacion_primaria,
-            'educacionSecundaria': self.educacion_secundaria,
-            'educacionBachillerato': self.educacion_bachillerato,
-            'educacionTerciaria': self.educacion_terciaria,
+            'nivelEducativo': self.nivel_educativo,
             'otrasCapacitaciones': self.otras_capacitaciones,
             'trabajosAnteriores': (
                 [t.to_dict() for t in self.trabajos_anteriores.all()]
@@ -147,10 +138,12 @@ class Contrato(db.Model):
     __tablename__ = 'hr_contratos'
 
     id = db.Column(db.Integer, primary_key=True)
-    funcionario_id = db.Column(db.Integer, db.ForeignKey('hr_funcionarios.id'), nullable=False)
-    tipo = db.Column(db.String(30), nullable=False)
+    funcionario_id = db.Column(db.Integer, db.ForeignKey('hr_funcionarios.id'), nullable=True)
+    funcionario_zafral_id = db.Column(db.Integer, db.ForeignKey('hr_funcionarios_zafrales.id'), nullable=True)
+    # Tipo de contrato vinculado al catálogo de regímenes laborales
+    regimen_laboral_id = db.Column(db.Integer, db.ForeignKey('hr_regimenes_laborales.id'), nullable=False)
     fecha_inicio = db.Column(db.Date, nullable=False)
-    fecha_fin = db.Column(db.Date, nullable=False)
+    fecha_fin = db.Column(db.Date, nullable=True)
     estado = db.Column(db.String(30), nullable=False, default='Vigente')
     sueldo_nominal = db.Column(db.Numeric(12, 2), nullable=True)
     observaciones = db.Column(db.Text, nullable=True)
@@ -158,13 +151,18 @@ class Contrato(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    regimen_laboral = db.relationship('RegimenLaboral', backref='contratos')
+    funcionario_zafral = db.relationship('FuncionarioZafral', backref='contratos')
+
     def to_dict(self):
         return {
             'id': str(self.id),
-            'funcionarioId': str(self.funcionario_id),
-            'tipo': self.tipo,
+            'funcionarioId': str(self.funcionario_id) if self.funcionario_id else None,
+            'funcionarioZafralId': str(self.funcionario_zafral_id) if self.funcionario_zafral_id else None,
+            'regimenLaboralId': str(self.regimen_laboral_id),
+            'tipo': self.regimen_laboral.nombre if self.regimen_laboral else None,
             'fechaInicio': self.fecha_inicio.isoformat(),
-            'fechaFin': self.fecha_fin.isoformat(),
+            'fechaFin': self.fecha_fin.isoformat() if self.fecha_fin else None,
             'estado': self.estado,
             'sueldoNominal': float(self.sueldo_nominal) if self.sueldo_nominal is not None else None,
             'observaciones': self.observaciones,
@@ -201,8 +199,8 @@ class Tarea(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(200), nullable=False)
-    dependencia_id = db.Column(db.Integer, db.ForeignKey('hr_dependencias.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     funcionarios_zafrales = db.relationship('FuncionarioZafral', backref='tarea', lazy='dynamic')
 
@@ -210,7 +208,6 @@ class Tarea(db.Model):
         return {
             'id': str(self.id),
             'nombre': self.nombre,
-            'dependenciaId': str(self.dependencia_id),
         }
 
 
@@ -245,10 +242,7 @@ class FuncionarioZafral(db.Model):
     zona = db.Column(db.String(100), nullable=True)
     observaciones = db.Column(db.Text, nullable=True)
 
-    educacion_primaria = db.Column(db.String(20), nullable=True)
-    educacion_secundaria = db.Column(db.String(20), nullable=True)
-    educacion_bachillerato = db.Column(db.String(20), nullable=True)
-    educacion_terciaria = db.Column(db.String(20), nullable=True)
+    nivel_educativo = db.Column(db.String(100), nullable=True)
     otras_capacitaciones = db.Column(db.Text, nullable=True)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -280,10 +274,7 @@ class FuncionarioZafral(db.Model):
             'entreCalles': self.entre_calles,
             'zona': self.zona,
             'observaciones': self.observaciones,
-            'educacionPrimaria': self.educacion_primaria,
-            'educacionSecundaria': self.educacion_secundaria,
-            'educacionBachillerato': self.educacion_bachillerato,
-            'educacionTerciaria': self.educacion_terciaria,
+            'nivelEducativo': self.nivel_educativo,
             'otrasCapacitaciones': self.otras_capacitaciones,
         }
 
@@ -340,11 +331,11 @@ class EstadoCivilCat(db.Model):
         return {'id': str(self.id), 'nombre': self.nombre}
 
 
-class EstadoEducacionCat(db.Model):
-    __tablename__ = 'hr_estados_educacion'
+class NivelEducativoCat(db.Model):
+    __tablename__ = 'hr_niveles_educativos'
 
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(50), nullable=False, unique=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
     activo = db.Column(db.Boolean, default=True, nullable=False)
     orden = db.Column(db.Integer, default=0, nullable=False)
 
@@ -374,3 +365,78 @@ class EstadoZafralCat(db.Model):
 
     def to_dict(self):
         return {'id': str(self.id), 'nombre': self.nombre}
+
+
+# ---------------------------------------------------------------------------
+# Uruguay Impulsa
+# ---------------------------------------------------------------------------
+
+class UruguayImpulsaFuncionario(db.Model):
+    __tablename__ = 'hr_uruguay_impulsa_funcionarios'
+
+    id = db.Column(db.Integer, primary_key=True)
+    area_funcion = db.Column(db.String(200), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    nombre = db.Column(db.String(150), nullable=False)
+    apellido = db.Column(db.String(150), nullable=False)
+    fecha_nacimiento = db.Column(db.Date, nullable=True)
+    pais = db.Column(db.String(100), nullable=True)
+    departamento = db.Column(db.String(100), nullable=True)
+    genero = db.Column(db.String(20), nullable=True)
+    estado_civil = db.Column(db.String(30), nullable=True)
+    tiene_hijos = db.Column(db.Boolean, default=False, nullable=False)
+    cantidad_hijos = db.Column(db.Integer, default=0, nullable=False)
+    cedula_identidad = db.Column(db.String(30), nullable=False, unique=True)
+    calle = db.Column(db.String(200), nullable=True)
+    entre_las_calles = db.Column(db.String(200), nullable=True)
+    zona = db.Column(db.String(100), nullable=True)
+    telefono = db.Column(db.String(30), nullable=True)
+    mail = db.Column(db.String(150), nullable=True)
+    primaria_estado = db.Column(db.String(20), nullable=True)
+    ciclo_basico_estado = db.Column(db.String(20), nullable=True)
+    bachillerato_estado = db.Column(db.String(20), nullable=True)
+    terciario_estado = db.Column(db.String(20), nullable=True)
+    capacitaciones = db.Column(db.Text, nullable=True)
+    trabajos_anteriores = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        trabajos = []
+        if self.trabajos_anteriores:
+            try:
+                import json
+                trabajos = json.loads(self.trabajos_anteriores)
+                if not isinstance(trabajos, list):
+                    trabajos = []
+            except Exception:
+                trabajos = []
+
+        return {
+            'id': str(self.id),
+            'areaFuncion': self.area_funcion,
+            'fecha': self.fecha.isoformat() if self.fecha else None,
+            'nombre': self.nombre,
+            'apellido': self.apellido,
+            'fechaNacimiento': self.fecha_nacimiento.isoformat() if self.fecha_nacimiento else None,
+            'pais': self.pais,
+            'departamento': self.departamento,
+            'genero': self.genero,
+            'estadoCivil': self.estado_civil,
+            'tieneHijos': self.tiene_hijos,
+            'cantidadHijos': self.cantidad_hijos,
+            'cedulaIdentidad': self.cedula_identidad,
+            'calle': self.calle,
+            'entreLasCalles': self.entre_las_calles,
+            'zona': self.zona,
+            'telefono': self.telefono,
+            'mail': self.mail,
+            'primariaEstado': self.primaria_estado,
+            'cicloBasicoEstado': self.ciclo_basico_estado,
+            'bachilleratoEstado': self.bachillerato_estado,
+            'terciarioEstado': self.terciario_estado,
+            'capacitaciones': self.capacitaciones,
+            'trabajosAnteriores': trabajos,
+            'createdAt': self.created_at.isoformat() if self.created_at else None,
+            'updatedAt': self.updated_at.isoformat() if self.updated_at else None,
+        }

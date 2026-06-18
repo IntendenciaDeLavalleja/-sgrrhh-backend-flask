@@ -135,12 +135,10 @@ def create_app(config_class=Config):
 
     # Registrar comandos CLI
     from .commands import create_admin, init_db
-    from .hr_seed import seed_hr_data, seed_zafrales_data, seed_catalog_data
+    from .hr_seed import seed_data
     app.cli.add_command(create_admin)
     app.cli.add_command(init_db)
-    app.cli.add_command(seed_hr_data)
-    app.cli.add_command(seed_zafrales_data)
-    app.cli.add_command(seed_catalog_data)
+    app.cli.add_command(seed_data)
 
     # Cargar modelos para migraciones
     import importlib

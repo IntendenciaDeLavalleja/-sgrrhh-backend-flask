@@ -12,7 +12,7 @@ from .hr import (
     TipoZafralCat,
     GeneroCat,
     EstadoCivilCat,
-    EstadoEducacionCat,
+    NivelEducativoCat,
     EstadoFuncionarioCat,
     EstadoZafralCat,
 )

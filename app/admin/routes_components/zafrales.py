@@ -8,10 +8,10 @@ from app.extensions import db
 from app.models.hr import (
     Dependencia,
     EstadoCivilCat,
-    EstadoEducacionCat,
     EstadoZafralCat,
     FuncionarioZafral,
     GeneroCat,
+    NivelEducativoCat,
     RegimenLaboral,
     Tarea,
     TipoZafralCat,
@@ -27,30 +27,23 @@ from .. import admin_bp
 def _form_context_zafral():
     """Contexto compartido para formularios de funcionario zafral."""
     dependencias = Dependencia.query.order_by(Dependencia.nombre).all()
-    tareas = Tarea.query.order_by(Tarea.dependencia_id, Tarea.nombre).all()
+    tareas = Tarea.query.order_by(Tarea.nombre).all()
     generos = GeneroCat.query.filter_by(activo=True).order_by(GeneroCat.orden, GeneroCat.nombre).all()
     estados_civiles = EstadoCivilCat.query.filter_by(activo=True).order_by(EstadoCivilCat.orden, EstadoCivilCat.nombre).all()
-    estados_educacion = EstadoEducacionCat.query.filter_by(activo=True).order_by(EstadoEducacionCat.orden, EstadoEducacionCat.nombre).all()
+    niveles_educativos = NivelEducativoCat.query.filter_by(activo=True).order_by(NivelEducativoCat.orden, NivelEducativoCat.nombre).all()
     estados_zafral = EstadoZafralCat.query.filter_by(activo=True).order_by(EstadoZafralCat.orden, EstadoZafralCat.nombre).all()
     regimenes = RegimenLaboral.query.filter_by(activo=True).order_by(RegimenLaboral.orden, RegimenLaboral.nombre).all()
     tipos_zafral = TipoZafralCat.query.filter_by(activo=True).order_by(TipoZafralCat.orden, TipoZafralCat.nombre).all()
-
-    # Mapa dep_id -> lista de tareas (para JS)
-    tareas_por_dep = {}
-    for t in tareas:
-        key = str(t.dependencia_id)
-        tareas_por_dep.setdefault(key, []).append({'id': t.id, 'nombre': t.nombre})
 
     return dict(
         dependencias=dependencias,
         tareas=tareas,
         generos=generos,
         estados_civiles=estados_civiles,
-        estados_educacion=estados_educacion,
+        niveles_educativos=niveles_educativos,
         estados_zafral=estados_zafral,
         regimenes=regimenes,
         tipos_zafral=tipos_zafral,
-        tareas_por_dep_json=json.dumps(tareas_por_dep),
     )
 
 
@@ -182,10 +175,7 @@ def zafrales_nuevo():
             entre_calles=data.get('entre_calles') or None,
             zona=data.get('zona') or None,
             observaciones=data.get('observaciones') or None,
-            educacion_primaria=data.get('educacion_primaria') or None,
-            educacion_secundaria=data.get('educacion_secundaria') or None,
-            educacion_bachillerato=data.get('educacion_bachillerato') or None,
-            educacion_terciaria=data.get('educacion_terciaria') or None,
+            nivel_educativo=data.get('nivel_educativo') or None,
             otras_capacitaciones=data.get('otras_capacitaciones') or None,
         )
         db.session.add(zafral)
@@ -277,10 +267,7 @@ def zafrales_editar(zaf_id):
         zafral.entre_calles = data.get('entre_calles') or None
         zafral.zona = data.get('zona') or None
         zafral.observaciones = data.get('observaciones') or None
-        zafral.educacion_primaria = data.get('educacion_primaria') or None
-        zafral.educacion_secundaria = data.get('educacion_secundaria') or None
-        zafral.educacion_bachillerato = data.get('educacion_bachillerato') or None
-        zafral.educacion_terciaria = data.get('educacion_terciaria') or None
+        zafral.nivel_educativo = data.get('nivel_educativo') or None
         zafral.otras_capacitaciones = data.get('otras_capacitaciones') or None
 
         db.session.commit()

@@ -9,10 +9,10 @@ from app.models.hr import (
     Cargo,
     Dependencia,
     EstadoCivilCat,
-    EstadoEducacionCat,
     EstadoFuncionarioCat,
     Funcionario,
     GeneroCat,
+    NivelEducativoCat,
     RegimenLaboral,
 )
 from app.utils.logging_helper import log_activity
@@ -26,28 +26,21 @@ from .. import admin_bp
 def _form_context():
     """Contexto compartido para formularios de funcionario."""
     dependencias = Dependencia.query.order_by(Dependencia.nombre).all()
-    cargos = Cargo.query.order_by(Cargo.dependencia_id, Cargo.nombre).all()
+    cargos = Cargo.query.order_by(Cargo.nombre).all()
     generos = GeneroCat.query.filter_by(activo=True).order_by(GeneroCat.orden, GeneroCat.nombre).all()
     estados_civiles = EstadoCivilCat.query.filter_by(activo=True).order_by(EstadoCivilCat.orden, EstadoCivilCat.nombre).all()
-    estados_educacion = EstadoEducacionCat.query.filter_by(activo=True).order_by(EstadoEducacionCat.orden, EstadoEducacionCat.nombre).all()
+    niveles_educativos = NivelEducativoCat.query.filter_by(activo=True).order_by(NivelEducativoCat.orden, NivelEducativoCat.nombre).all()
     estados_funcionario = EstadoFuncionarioCat.query.filter_by(activo=True).order_by(EstadoFuncionarioCat.orden, EstadoFuncionarioCat.nombre).all()
     regimenes = RegimenLaboral.query.filter_by(activo=True).order_by(RegimenLaboral.orden, RegimenLaboral.nombre).all()
-
-    # Mapa dep_id -> lista de cargos (para JS)
-    cargos_por_dep = {}
-    for c in cargos:
-        key = str(c.dependencia_id)
-        cargos_por_dep.setdefault(key, []).append({'id': c.id, 'nombre': c.nombre})
 
     return dict(
         dependencias=dependencias,
         cargos=cargos,
         generos=generos,
         estados_civiles=estados_civiles,
-        estados_educacion=estados_educacion,
+        niveles_educativos=niveles_educativos,
         estados_funcionario=estados_funcionario,
         regimenes=regimenes,
-        cargos_por_dep_json=json.dumps(cargos_por_dep),
     )
 
 
@@ -171,10 +164,7 @@ def funcionarios_nuevo():
             entre_calles=data.get('entre_calles') or None,
             zona=data.get('zona') or None,
             observaciones=data.get('observaciones') or None,
-            educacion_primaria=data.get('educacion_primaria') or None,
-            educacion_secundaria=data.get('educacion_secundaria') or None,
-            educacion_bachillerato=data.get('educacion_bachillerato') or None,
-            educacion_terciaria=data.get('educacion_terciaria') or None,
+            nivel_educativo=data.get('nivel_educativo') or None,
             otras_capacitaciones=data.get('otras_capacitaciones') or None,
         )
         db.session.add(funcionario)
@@ -264,10 +254,7 @@ def funcionarios_editar(func_id):
         funcionario.entre_calles = data.get('entre_calles') or None
         funcionario.zona = data.get('zona') or None
         funcionario.observaciones = data.get('observaciones') or None
-        funcionario.educacion_primaria = data.get('educacion_primaria') or None
-        funcionario.educacion_secundaria = data.get('educacion_secundaria') or None
-        funcionario.educacion_bachillerato = data.get('educacion_bachillerato') or None
-        funcionario.educacion_terciaria = data.get('educacion_terciaria') or None
+        funcionario.nivel_educativo = data.get('nivel_educativo') or None
         funcionario.otras_capacitaciones = data.get('otras_capacitaciones') or None
 
         db.session.commit()
